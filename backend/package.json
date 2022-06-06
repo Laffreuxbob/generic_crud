@@ -1,0 +1,17 @@
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "description": "",
+  "main": "main.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "startback": "node main.js"
+  },
+  "author": "bob117",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.1",
+    "mariadb": "^3.0.0",
+    "moment": "^2.29.3"
+  }
+}
