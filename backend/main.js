@@ -26,12 +26,18 @@ const allowCrossDomain = function (req, res, next) {
     res.header('Access-Control-Allow-Headers', 'Content-Type');
     next();
 }
+// server.options('*', )
+
+
+// server.options('*', cors());  // enable pre-flight
+
+
 server.use(allowCrossDomain);
 server.use(bodyPost.json()); // support json encoded bodies
 server.use(bodyPost.urlencoded({extended: false})); // support encoded bodies
 
 
-// curl http://127.0.0.1:8080/
+// curl http://ip:port/
 server.get('/', (req, res) => {
     res.status(200);
     let json_response = {
@@ -41,7 +47,7 @@ server.get('/', (req, res) => {
     res.json(json_response)
 })
 
-// curl http://127.0.0.1:8080/version
+// curl http://ip:port/version
 server.get('/version', (req, res) => {
     if (!pkg || !pkg.version) {
         console.log('Error: No package.json');
@@ -52,7 +58,8 @@ server.get('/version', (req, res) => {
     res.send(JSON.stringify(pkg.version))
 })
 
-server.get('/products', (req, res) => {
+// curl http://ip:port/item
+server.get('/item', (req, res) => {
     mariadb.createConnection({
         host: database.host,
         port: database.port,
@@ -77,7 +84,32 @@ server.get('/products', (req, res) => {
         });
 })
 
-server.post('/item/add', (req, res) => {
+server.get('/item:id', (req, res) => {
+    mariadb.createConnection({
+        host: database.host,
+        port: database.port,
+        user: database.user,
+        password: database.password,
+        database: database.database
+    })
+        .then(conn => {
+            conn.query("SELECT * FROM item WHERE id = ?", [url.params.id])
+                .then(rows => {
+                    conn.end()
+                    res.send(rows);
+                })
+                .catch(err => {
+                    console.log('bad request')
+                    res.status(500)
+                });
+        })
+        .catch(err => {
+            console.log('bad connection')
+            res.status(500)
+        });
+})
+
+server.post('/item', (req, res) => {
     console.log("POST")
     console.log(req.body)
 
@@ -119,7 +151,7 @@ server.post('/item/add', (req, res) => {
     //     })
 });
 
-server.delete('/item/delete', (req, res) => {
+server.delete('/item', (req, res) => {
     console.log("DELETE")
     console.log(req.body)
 
@@ -146,6 +178,43 @@ server.delete('/item/delete', (req, res) => {
         });
 
 });
+
+
+// curl -X PUT -H "Content-Type: application/json" -d '{"id_to_update":"1", "updated_brand":"bob", "updated_model":"bobby", "updated_price":"10"}' "127.0.0.117:11717/item"
+server.put('/item', (req, res) => {
+    console.log("PUT")
+    console.log(req.body)
+
+    mariadb.createConnection({
+        host: database.host,
+        port: database.port,
+        user: database.user,
+        password: database.password,
+        database: database.database
+    })
+        .then(async conn => {
+            conn.query("UPDATE item SET brand = ? , model = ?, price = ? WHERE id = ?", [req.body.updated_brand, req.body.updated_model, req.body.updated_price, req.body.id_to_update])
+                .then(
+                    () => res.status(200)
+                )
+                .then(
+                    await conn.query("SELECT * FROM item WHERE id = ?", [req.body.id_to_update])
+                        .then(updated_item => {
+                            conn.end()
+                            res.send(updated_item);
+                        })
+                )
+                .catch(err => {
+                    console.log(err, 'bad request')
+                    res.status(500)
+                });
+        })
+        .catch(err => {
+            console.log(err, 'bad connection')
+            res.status(500)
+        });
+});
+
 
 //server.get('/products', productService.getAll);
 // server.get('/products/:id', productController.getOne);

@@ -39,7 +39,7 @@ export default {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ newbrand: this.new_brand, newmodel: this.new_model, newprice: this.new_price })
       };
-      fetch('http://127.0.0.117:11717/item/add', requestOptions)
+      fetch('http://127.0.0.117:11717/item', requestOptions)
           .then(async response => {
             const data = await response.json();
             // check for error response
